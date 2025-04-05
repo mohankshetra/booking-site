@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin - Bookings</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { font-family: sans-serif; background: #f0f0f0; padding: 20px; }
+    h2 { text-align: center; }
+    .booking-list, .auth-box {
+      max-width: 800px;
+      margin: 30px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .booking { border-bottom: 1px solid #eee; padding: 15px 10px; position: relative; }
+    .booking:last-child { border-bottom: none; }
+    .delete-btn {
+      position: absolute;
+      top: 15px;
+      right: 10px;
+      background: #dc3545;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .delete-btn:hover { background: #c82333; }
+    .action-btn {
+      display: inline-block;
+      margin: 10px 5px;
+      padding: 10px 20px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+    }
+    .action-btn:hover { background: #0069d9; }
+    .clear-btn { background: #ff8800; }
+    .clear-btn:hover { background: #e67600; }
+    .back-link { text-align: center; margin-top: 20px; }
+    .auth-box input {
+      padding: 10px;
+      font-size: 16px;
+      width: 80%;
+      margin-right: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h2>Admin Dashboard</h2>
+
+  <div class="auth-box" id="authBox">
+    <p><strong>Enter Admin Password:</strong></p>
+    <input type="password" id="adminPass" placeholder="Enter password..." />
+    <button class="action-btn" onclick="checkPassword()">Login</button>
+    <p id="authError" style="color: red;"></p>
+  </div>
+
+  <div class="booking-list" id="bookingList" style="display: none;"></div>
+
+  <div style="text-align: center; display: none;" id="actions">
+    <button class="action-btn clear-btn" onclick="clearAll()">Clear All</button>
+    <button class="action-btn" onclick="downloadCSV()">Export to CSV</button>
+  </div>
+
+  <div class="back-link">
+    <a href="index.html">← Back to Booking</a>
+  </div>
+
+  <script>
+    const PASSWORD = "admin123"; // You can change this
+
+    const bookings = JSON.parse(localStorage.getItem("bookings")) || [];
+
+    function checkPassword() {
+      const input = document.getElementById('adminPass').value;
+      if (input === PASSWORD) {
+        document.getElementById('authBox').style.display = 'none';
+        document.getElementById('bookingList').style.display = 'block';
+        document.getElementById('actions').style.display = 'block';
+        renderBookings();
+      } else {
+        document.getElementById('authError').innerText = "Incorrect password!";
+      }
+    }
+
+    function renderBookings() {
+      const list = document.getElementById('bookingList');
+      list.innerHTML = "";
+      if (bookings.length === 0) {
+        list.innerHTML = "<p>No bookings found.</p>";
+        return;
+      }
+
+      bookings.forEach((b, index) => {
+        const div = document.createElement('div');
+        div.className = 'booking';
+        div.innerHTML = `
+          <strong>${index + 1}. ${b.name}</strong><br/>
+          📧 ${b.email}<br/>
+          📅 ${b.date} | 🛠️ ${b.service}
+          <button class="delete-btn" onclick="deleteBooking(${index})">Delete</button>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function deleteBooking(index) {
+      if (confirm("Delete this booking?")) {
+        bookings.splice(index, 1);
+        localStorage.setItem("bookings", JSON.stringify(bookings));
+        renderBookings();
+      }
+    }
+
+    function clearAll() {
+      if (confirm("Delete all bookings?")) {
+        localStorage.removeItem("bookings");
+        location.reload();
+      }
+    }
+
+    function downloadCSV() {
+      if (bookings.length === 0) {
+        alert("No bookings to export.");
+        return;
+      }
+
+      let csvContent = "data:text/csv;charset=utf-8,";
+      csvContent += "Name,Email,Date,Service\n";
+      bookings.forEach(b => {
+        csvContent += `${b.name},${b.email},${b.date},${b.service}\n`;
+      });
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "bookings.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  </script>
+</body>
+</html>
